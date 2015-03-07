@@ -12,12 +12,15 @@ import re
 import os
 import random
 import string
+import time
 from threading import Thread
+
 
 RE_IMAGELINKA = r'<img class="PhotoPostImage" src="http:.*alt'
 RE_IMAGELINK = r'http:.*jpg'
+RANDOMSTRING = "abcdefghijklmnopqrstuvwxyzQWERTYUIOPKJLHGFDSAZXCVBNM0987654321"
 
-class PaImage():
+class request():
     def __init__(self,baseurl,savepath):
         self.baseURL = baseurl
         self.filePath = savepath
@@ -50,25 +53,27 @@ class PaImage():
         except:
             return None
 
-    def downloadImage(self,Imglinks):
+    def downloadImage(self,Imglinks, threadNo):
         if Imglinks is None:
             return
         try:
             if not os.path.exists(self.filePath) :
                 os.mkdir(self.filePath)
             for item in Imglinks:
-                jpgfile = self.filePath + string.join(random.sample('abcdefghijklmnopqrstuvwxyz0123456789', 8)).replace(" ", "") +'.jpg'
+                jpgfile = self.filePath + string.join(random.sample(RANDOMSTRING, 8)).replace(" ", "") +'.jpg'
                 print jpgfile
                 with open(jpgfile, 'wb') as jpg:
-                    jpg.write(urllib2.urlopen(item).read())
+                    jpg.write(urllib2.urlopen(url=item, timeout =10).read())
+            print('Thread %d finish.\n' %threadNo)
         except Exception, ex:
             print ex
 
     def GetImages(self, pageNum):
-        for i in range(1,pageNum):
+        for i in range(1, pageNum+1):
             pg= self.getPage(i)
             lks = self.getImglinks(pg)
-            downThread = Thread(group =None, target= self.downloadImage, args = (lks,))
+            downThread = Thread(group =None, target= self.downloadImage, args = (lks,i))
             downThread.setDaemon(True)
             downThread.start()
-
+            print('Thread %d start.\n' %i)
+            time.sleep(1)
